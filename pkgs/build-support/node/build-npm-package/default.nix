@@ -48,12 +48,12 @@ lib.extendMkDerivation {
       # Flags to pass to `npm pack`.
       npmPackFlags ? [ ],
       # Flags to pass to `npm prune`.
-      npmPruneFlags ? npmInstallFlags,
+      npmPruneFlags ? finalAttrs.npmInstallFlags,
       # Value for npm `--workspace` flag and directory in which the files to be installed are found.
       npmWorkspace ? null,
       nodejs ? topLevelArgs.nodejs,
       npmDeps ? fetchNpmDeps {
-        inherit
+        inherit (finalAttrs)
           forceGitDeps
           forceEmptyCache
           src
@@ -65,7 +65,7 @@ lib.extendMkDerivation {
           patchFlags
           ;
         name = "${name}-npm-deps";
-        hash = npmDepsHash;
+        hash = finalAttrs.npmDepsHash;
       },
       # Custom npmConfigHook
       npmConfigHook ? null,
@@ -81,6 +81,35 @@ lib.extendMkDerivation {
       npmHooks = buildPackages.npmHooks.override {
         inherit nodejs;
       };
+      inherit (finalAttrs)
+        name
+        src
+        srcs
+        sourceRoot
+        prePatch
+        patches
+        postPatch
+        patchFlags
+        nativeBuildInputs
+        buildInputs
+        npmDepsHash
+        forceGitDeps
+        forceEmptyCache
+        makeCacheWritable
+        npmBuildScript
+        npmFlags
+        npmInstallFlags
+        npmRebuildFlags
+        npmBuildFlags
+        npmPackFlags
+        npmPruneFlags
+        npmWorkspace
+        nodejs
+        npmDeps
+        npmConfigHook
+        npmBuildHook
+        npmInstallHook
+        ;
     in
     {
       inherit npmDeps npmBuildScript;
@@ -101,7 +130,7 @@ lib.extendMkDerivation {
       strictDeps = true;
 
       # Stripping takes way too long with the amount of files required by a typical Node.js project.
-      dontStrip = args.dontStrip or true;
+      dontStrip = finalAttrs.dontStrip or true;
 
       env = {
         npm_config_arch =
@@ -112,10 +141,10 @@ lib.extendMkDerivation {
           .${stdenv.hostPlatform.parsed.cpu.name} or stdenv.hostPlatform.parsed.cpu.name;
         npm_config_platform = stdenv.hostPlatform.parsed.kernel.name;
       }
-      // (args.env or { });
+      // (finalAttrs.env or { });
 
-      meta = (args.meta or { }) // {
-        platforms = args.meta.platforms or nodejs.meta.platforms;
+      meta = (finalAttrs.meta or { }) // {
+        platforms = finalAttrs.meta.platforms or finalAttrs.nodejs.meta.platforms;
       };
     };
 }
